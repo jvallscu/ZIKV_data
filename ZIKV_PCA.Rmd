@@ -1,0 +1,76 @@
+---
+title: "PCA_ZIKV_Data"
+author: "Joan M. Valls Cuevas"
+date: "5/1/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#DC project: ZIKV infection data
+
+##
+Read in data from text file supplied by Aaron Carlin MD PHD
+```{r}
+#library("DESeq2")
+my_data <- read.delim("hDC_DE.txt")
+
+my_data2 <- data.frame(my_data[,2:10])
+
+my_data3 <- my_data2
+```
+
+
+```{r}
+my_data3[my_data2 == 0 ] <- NA
+colnames(my_data3) <- c( "hDC7_mock", "hDC7_ZIKVneg", "hDC7_ZIKVpos",
+                         "hDC8_mock", "hDC8_ZIKVneg", "hDC8_ZIKVpos",
+                          "hDC10_mock", "hDC10_ZIKVneg", "hDC10_ZIKVpos")
+```
+
+Transforming the data
+```{r}
+log_dat <- log2(my_data3)
+
+log_dat <- na.omit(log_dat)
+
+```
+Here I will make a PCA plot of all the samples from all three donors
+```{r}
+
+pca <- prcomp(t(log_dat[,1:9]))
+
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2")
+
+text(pca$x[,1], pca$x[,2], colnames(log_dat))
+
+```
+
+Summary of PCA data
+```{r}
+
+summary(pca)
+
+```
+Now I will remove the mock and perform a PCA of the data
+```{r}
+
+log_dat2 <- data.frame(c(log_dat[,2:3], log_dat[,5:6], log_dat[,8:9]))
+
+pca2 <- prcomp(t(log_dat2[,1:6]))
+
+plot(pca2$x[,1], pca2$x[,2], xlab="PC1", ylab="PC2")
+
+text(pca2$x[,1], pca2$x[,2], colnames(log_dat2))
+```
+
+
+
+Summary of PCA data
+```{r}
+summary(pca2)
+```
+
+

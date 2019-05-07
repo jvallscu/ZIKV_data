@@ -68,7 +68,7 @@ sample_dat2 <- sample_dat
 
 #Remove all the rows when all values in that row are between a certain range
 
-sample_dat2 <- sample_dat2[!(all_true_filter(sample_dat2, 2)),]
+sample_dat2 <- sample_dat2[!(all_true_filter(sample_dat2, 4)),]
 
 
 #Cluster the data 

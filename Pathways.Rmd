@@ -1,0 +1,187 @@
+---
+title: "Pathway ZIKV"
+author: "Joan M. Valls Cuevas"
+date: "5/23/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read in the data and relabel the columns
+```{r}
+
+my_dat <- data.frame(read.delim("hDC_AR_rlog.txt"))
+my_dat2 <- data.frame(my_dat[,9:17], row.names = my_dat[,1])
+colnames(my_dat2) <- c( "hDC7_mock", "hDC7_ZIKVneg", "hDC7_ZIKVpos",
+                         "hDC8_mock", "hDC8_ZIKVneg", "hDC8_ZIKVpos",
+                         "hDC10_mock", "hDC10_ZIKVneg", "hDC10_ZIKVpos")
+
+
+```
+
+```{r}
+#remove columns with 0 value
+my_dat2 <- my_dat2[rowSums(my_dat2) != 0,]
+#subtract the 'background' mock from sample
+ZIKV_minus_mock <- data.frame(my_dat2[,2:3] - my_dat2$hDC7_mock,
+                         my_dat2[,5:6] - my_dat2$hDC8_mock,
+                         my_dat2[,8:9] - my_dat2$hDC10_mock)
+#ZIKV_minus_mock2 <- ZIKV_minus_mock
+```
+
+
+#Add annotation information
+
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+
+columns(org.Hs.eg.db)
+
+ZIKV_minus_mock$symbol = mapIds(org.Hs.eg.db,
+                    keys=rownames(ZIKV_minus_mock), 
+                    keytype="REFSEQ",
+                    column="SYMBOL",
+                    multiVals="first")
+
+
+ZIKV_minus_mock$entrez = mapIds(org.Hs.eg.db,
+                    keys=rownames(ZIKV_minus_mock),
+                    keytype="REFSEQ",
+                    column="ENTREZID",
+                    multiVals="first")
+
+ZIKV_minus_mock$name =   mapIds(org.Hs.eg.db,
+                    keys=rownames(ZIKV_minus_mock),
+                    keytype= "REFSEQ",
+                    column= "GENENAME",
+                    multiVals="first")
+```
+
+loading libraries for data analysis
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+```
+
+
+```{r}
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+
+
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+
+
+```
+
+
+```{r}
+eight_neg = ZIKV_minus_mock[,3]
+names(eight_neg) = ZIKV_minus_mock$entrez
+head(eight_neg)
+
+eight_pos = ZIKV_minus_mock[,4]
+names(eight_pos) = ZIKV_minus_mock$entrez
+head(eight_pos)
+```
+
+
+
+```{r}
+eight_neg_set = gage(eight_neg, gsets= kegg.sets.hs)
+eight_pos_set = gage(eight_pos, gsets= kegg.sets.hs)
+```
+
+
+```{r}
+attributes(eight_neg_set)
+attributes(eight_pos_set)
+```
+
+Display the top results of up and down regulation for both ZIKV+
+and ZIKV- samples from hDC8.
+
+```{r}
+head(eight_neg_set$greater)
+head(eight_pos_set$greater)
+head(eight_neg_set$less)
+head(eight_pos_set$less)
+```
+
+```{r}
+pathview(gene.data = eight_pos, pathway.id = "hsa04623", kegg.native = TRUE)
+
+pathview(gene.data = eight_neg, pathway.id = "hsa04623", kegg.native = TRUE)
+
+# "hsa00061" lipid synt
+#  "hsa04979" cholesterol synthesis
+```
+
+#Combining all three samples into one
+```{r}
+#intialize with two columns
+ZIKV_minus_mock_combine <- data.frame(ZIKV_minus_mock[,1:2])
+
+ZIKV_minus_mock_combine[,1] <- (ZIKV_minus_mock$hDC7_ZIKVneg + ZIKV_minus_mock$hDC8_ZIKVneg + ZIKV_minus_mock$hDC10_ZIKVneg / 3)
+
+ZIKV_minus_mock_combine[,2] <- (ZIKV_minus_mock$hDC7_ZIKVpos + ZIKV_minus_mock$hDC8_ZIKVpos + ZIKV_minus_mock$hDC10_ZIKVpos / 3)
+
+colnames(ZIKV_minus_mock_combine) <- c("neg", "pos")
+
+
+
+```
+
+
+
+```{r}
+ZIKV_minus_mock_combine$symbol = mapIds(org.Hs.eg.db,
+                    keys=rownames(ZIKV_minus_mock_combine), 
+                    keytype="REFSEQ",
+                    column="SYMBOL",
+                    multiVals="first")
+
+
+ZIKV_minus_mock_combine$entrez = mapIds(org.Hs.eg.db,
+                    keys=rownames(ZIKV_minus_mock_combine),
+                    keytype="REFSEQ",
+                    column="ENTREZID",
+                    multiVals="first")
+
+ZIKV_minus_mock_combine$name =   mapIds(org.Hs.eg.db,
+                    keys=rownames(ZIKV_minus_mock_combine),
+                    keytype= "REFSEQ",
+                    column= "GENENAME",
+                    multiVals="first")
+```
+
+```{r}
+combine_neg = ZIKV_minus_mock_combine[,1]
+names(combine_neg) = ZIKV_minus_mock_combine$entrez
+head(combine_neg)
+
+combine_pos = ZIKV_minus_mock_combine[,2]
+names(combine_pos) = ZIKV_minus_mock_combine$entrez
+head(combine_pos)
+```
+```{r}
+combine_neg_set = gage(combine_neg, gsets= kegg.sets.hs)
+combine_pos_set = gage(combine_pos, gsets= kegg.sets.hs)
+```
+
+
+
+
+
+```{r}
+head(combine_neg_set$greater)
+head(combine_pos_set$greater)
+head(combine_neg_set$less)
+head(combine_pos_set$less)
+```
+
